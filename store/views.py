@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404
 from django.http import HttpResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from django.db.models.aggregates import Count
 from .models import Collection, Product
 from .serializers import CollectionSerializer, ProductSerializer
 from rest_framework import status
@@ -43,7 +44,12 @@ def product_detail(request, id):
 @api_view(['GET', 'POST'])
 def collection_list(request):
     if request.method == 'GET':
-        queryset = Collection.objects.all().order_by('id')
+        queryset = Collection.objects.annotate(
+            products_count=Count('product'),
+        ).all()
+         #.select_related('featured_product')
+         #.prefetch_related('products')
+         #.order_by('id')
         serializer = CollectionSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
     elif request.method == 'POST':
@@ -53,9 +59,11 @@ def collection_list(request):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['GET', 'PUT'])
+@api_view(['GET', 'PUT', 'DELETE'])
 def collection_detail(request, pk):
-    collection = get_object_or_404(Collection, pk=pk)
+    collection = get_object_or_404(Collection.objects.annotate(
+            products_count=Count('product')
+        ), pk=pk)
     if request.method == 'GET':
         serializer = CollectionSerializer(collection)
         return Response(serializer.data)
@@ -65,3 +73,9 @@ def collection_detail(request, pk):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    elif request.method == 'DELETE':
+        if collection.products_count > 0:
+            return Response({'error': 'Collection cannot be deleted because it has associated products.'}, 
+                            status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        collection.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
