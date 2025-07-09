@@ -13,8 +13,15 @@
     <h1>Hello {{ name }} and value is {{ value }}</h1>
     {% else %}
     <h1>Hello World</h1>
-    {% endif %}
-
+    {% endif %} {{result}}
+    <ul>
+      {% for item in products %}
+      <li>
+        {{ item.id }} - {{item.customer.first_name}} {{item.customer.last_name}}
+        - {{ item.customer.order.placed_at }} - {{ item }}
+      </li>
+      {% endfor %}
+    </ul>
     <script src="" async defer></script>
   </body>
 </html>
