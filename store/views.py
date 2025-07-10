@@ -9,11 +9,13 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.filters import SearchFilter, OrderingFilter
 #from rest_framework.pagination import PageNumberPagination
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, UpdateModelMixin, DestroyModelMixin, ListModelMixin
+from rest_framework.viewsets import GenericViewSet
 
 from store.filters import ProductFilter
 from store.pagination import DefaultPagination
-from .models import Collection, OrderItem, Product, Review
-from .serializers import CollectionSerializer, ProductSerializer, ReviewSerializer
+from .models import Collection, Customer, OrderItem, Product, Review
+from .serializers import CollectionSerializer, CustomerSerializer, ProductSerializer, ReviewSerializer
 
 class ProductViewSet(ModelViewSet):
     queryset = Product.objects.all()
@@ -68,3 +70,8 @@ class ReviewViewSet(ModelViewSet):
     #     )
     def perform_create(self, serializer):
         serializer.save(product_id=self.kwargs['product_pk'])
+
+class CustomerViewSet(CreateModelMixin, RetrieveModelMixin, UpdateModelMixin, GenericViewSet):
+    queryset = Customer.objects.all()
+    serializer_class = CustomerSerializer
+    
